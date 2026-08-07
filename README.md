@@ -1,4 +1,4 @@
-# actual-mcp-server
+# actualbudget-mcp-server
 
 MCP server for [Actual Budget](https://actualbudget.org/), built for Claude, Cursor, and other AI agents.
 
@@ -37,7 +37,7 @@ Claude Code / Cursor MCP config:
   "mcpServers": {
     "actual-budget": {
       "command": "node",
-      "args": ["/path/to/actual-mcp-server/dist/index.js"],
+      "args": ["/path/to/actualbudget-mcp-server/dist/index.js"],
       "env": {
         "ACTUAL_SERVER_URL": "https://actual.example.com",
         "ACTUAL_PASSWORD": "...",

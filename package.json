@@ -1,5 +1,5 @@
 {
-  "name": "@nightsquawktech/actual-mcp-server",
+  "name": "@nightsquawktech/actualbudget-mcp-server",
   "version": "0.1.0",
   "description": "Actual Budget MCP server for Claude, Cursor, and AI agents: full budget-envelope and account tooling on a long-lived engine with serialized writes, mutation backups, and cache-reset recovery.",
   "keywords": [
@@ -51,11 +51,11 @@
   "author": "Kevin Reyes (NightSquawk Tech) <hello@nightsquawk.tech>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/NightSquawk/actual-mcp-server.git"
+    "url": "git+https://github.com/NightSquawk/actualbudget-mcp-server.git"
   },
-  "homepage": "https://github.com/NightSquawk/actual-mcp-server#readme",
+  "homepage": "https://github.com/NightSquawk/actualbudget-mcp-server#readme",
   "bugs": {
-    "url": "https://github.com/NightSquawk/actual-mcp-server/issues"
+    "url": "https://github.com/NightSquawk/actualbudget-mcp-server/issues"
   },
   "publishConfig": {
     "access": "public"
