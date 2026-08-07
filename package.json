@@ -1,0 +1,66 @@
+{
+  "name": "@nightsquawktech/actual-mcp-server",
+  "version": "0.1.0",
+  "description": "Actual Budget MCP server for Claude, Cursor, and AI agents: full budget-envelope and account tooling on a long-lived engine with serialized writes, mutation backups, and cache-reset recovery.",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "model-context-protocol",
+    "modelcontextprotocol",
+    "claude",
+    "cursor",
+    "ai-agent",
+    "llm",
+    "actual",
+    "actual-budget",
+    "budgeting",
+    "personal-finance",
+    "self-hosted"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": "./dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "COMMERCIAL.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "clean": "rimraf dist"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@actual-app/api": "^26.7.0",
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "dotenv": "^16.4.7",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "rimraf": "^6.0.1",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0"
+  },
+  "license": "AGPL-3.0-only",
+  "author": "Kevin Reyes (NightSquawk Tech) <hello@nightsquawk.tech>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NightSquawk/actual-mcp-server.git"
+  },
+  "homepage": "https://github.com/NightSquawk/actual-mcp-server#readme",
+  "bugs": {
+    "url": "https://github.com/NightSquawk/actual-mcp-server/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true
+  }
+}
