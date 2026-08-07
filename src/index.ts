@@ -14,7 +14,7 @@ async function main(): Promise<void> {
     version: SERVER_VERSION
   });
 
-  registerTools(server, engine, config.enableWrite);
+  registerTools(server, engine, config);
 
   // api.shutdown() must run before exit: it flushes pending sync messages and
   // releases the sqlite file. Cover signals and the client closing the pipe.

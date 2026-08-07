@@ -50,24 +50,37 @@ Claude Code / Cursor MCP config:
 }
 ```
 
-## Tools
+## Tools (53)
 
 **Always on (read/admin):**
-`actual_get_accounts`, `actual_get_categories`, `actual_get_budget_months`, `actual_get_budget_month`, `actual_get_transactions`, `actual_get_payees`, `actual_get_server_version`, `actual_sync_now`, `actual_reload_budget`
+- `actual_get_accounts`, `actual_get_categories`, `actual_get_budget_months`, `actual_get_budget_month`
+- `actual_get_transactions`, `actual_search_transactions` (cross-account, filters: payee substring / amount / category / account / date range / uncategorized-only)
+- `actual_get_payees`, `actual_get_common_payees`, `actual_get_payee_rules`, `actual_get_rules`, `actual_get_tags`, `actual_get_schedules`, `actual_get_note`
+- `actual_query` — general read-only AQL access to any table with filters, joins, groupBy, and aggregates (spending-by-category reports in one call)
+- `actual_get_server_version`, `actual_sync_now`, `actual_reload_budget`, `actual_prune_stale` (dry-run by default)
 
 **With `ACTUAL_ENABLE_WRITE=true`:**
-`actual_update_account` (incl. on/off budget), `actual_create_category` (incl. `is_income`), `actual_create_category_group` (with create-then-update workaround for the engine dropping `is_income` on create), `actual_update_category`, `actual_delete_category`, `actual_set_budget_amount`, `actual_set_budget_carryover`, `actual_hold_budget_for_next_month`, `actual_reset_budget_hold`
+- Accounts: `actual_create_account`, `actual_update_account` (incl. on/off budget), `actual_close_account` (transfer-aware), `actual_reopen_account`, `actual_delete_account`
+- Categories: `actual_create_category` (incl. `is_income`), `actual_update_category`, `actual_delete_category`, `actual_create_category_group` (create-then-update workaround for the engine dropping `is_income` on create), `actual_update_category_group`, `actual_delete_category_group`
+- Budget envelope: `actual_set_budget_amount`, `actual_set_budget_amounts` (batch, via `batchBudgetUpdates`), `actual_set_budget_carryover`, `actual_hold_budget_for_next_month`, `actual_reset_budget_hold`
+- Transactions: `actual_add_transaction`, `actual_update_transaction` (recategorize, payee, notes, date, amount, cleared), `actual_delete_transaction`, `actual_import_transactions` (batch with `imported_id` dedup and dry-run preview)
+- Payees: `actual_create_payee`, `actual_update_payee`, `actual_merge_payees`, `actual_delete_payee`
+- Rules: `actual_create_rule`, `actual_update_rule`, `actual_delete_rule`
+- Schedules: `actual_create_schedule`, `actual_update_schedule`, `actual_delete_schedule`
+- Tags: `actual_create_tag`, `actual_update_tag`, `actual_delete_tag`
+- Notes: `actual_update_note`
+- Bank sync: `actual_run_bank_sync` (one account or all)
 
-Amounts in write tools are major currency units (`123.45`); Actual stores minor units (cents) and conversion happens at the boundary. Read tools currently return Actual's raw minor-unit integers except account balances, which are converted.
+Amounts in tool inputs are major currency units (`123.45`); Actual stores minor units (cents) and conversion happens at the boundary. Transaction lists return raw minor-unit integers; account `balance` and `balance_current` are converted to major units (`balance_current: null` means the account has never bank-synced). `totalBudgeted` in `actual_get_budget_month` is normalized to agree in sign with its per-group siblings (the engine reports it negated internally).
 
-## Roadmap
+Transaction update/delete compensate for an upstream engine quirk: the engine's handlers return before their internal batch write is applied, so this server polls until the change is visible before responding — responses and backups always reflect applied state. The same one-operation lag can make a balance read immediately after `actual_close_account` (with transfer) show the pre-transfer value; the closed state itself is immediate.
 
-- Transaction writes: `addTransactions`, `importTransactions` (with `imported_id` dedup), update, delete
-- Payee writes and `mergePayees`
-- Rules, schedules, tags, notes
-- `aqlQuery` / query-builder tool for reporting (spending by category, monthly summaries)
-- `batchBudgetUpdates` wrapper for bulk envelope edits
-- Streamable HTTP transport
+## Known limitations
+
+- Transaction splits (subtransactions) are not exposed; use the Actual UI
+- Single-budget by design: `loadBudget`/`runImport`/`getBudgets` multi-file management is intentionally out of scope (one server instance per budget file)
+- `actual_run_bank_sync` is registered but exercised only against the engine, not against live GoCardless/SimpleFIN providers
+- Streamable HTTP transport not yet implemented (stdio only)
 
 ## License
 

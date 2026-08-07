@@ -37,7 +37,11 @@ export function registerBudgetTools(server: McpServer, engine: ActualEngine, ena
     async (params: { month: string }) => {
       try {
         const budget = await engine.read((api) => api.getBudgetMonth(params.month));
-        return makeToolResponse({ budget });
+        // The engine reports totalBudgeted with the sheet's internal sign
+        // convention (negated), disagreeing with its own categoryGroups[*]
+        // .budgeted siblings. Normalize so totalBudgeted === sum of the
+        // positive per-group amounts; toBudget et al are already consistent.
+        return makeToolResponse({ budget: { ...budget, totalBudgeted: -budget.totalBudgeted } });
       } catch (error) {
         return errorResponse(formatActualError(error));
       }
@@ -72,6 +76,42 @@ export function registerBudgetTools(server: McpServer, engine: ActualEngine, ena
           category_id: params.category_id,
           amount: params.amount
         });
+      } catch (error) {
+        return errorResponse(formatActualError(error));
+      }
+    }
+  );
+
+  server.registerTool(
+    "actual_set_budget_amounts",
+    {
+      title: "Set Actual Budget Amounts (Batch)",
+      description: "Set budgeted amounts for many categories in one call — a full month's envelope in one round trip instead of one call per category. Amounts in major currency units. Sensitive edit: call only after explicit human authorization.",
+      inputSchema: {
+        month: MONTH,
+        entries: z
+          .array(
+            z.object({
+              category_id: z.string(),
+              amount: z.number().describe("Budgeted amount in major units, e.g. 250 or 123.45")
+            })
+          )
+          .min(1)
+          .max(200)
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+    },
+    async (params: { month: string; entries: Array<{ category_id: string; amount: number }> }) => {
+      try {
+        await engine.write((api) =>
+          api.batchBudgetUpdates(async () => {
+            for (const entry of params.entries) {
+              await api.setBudgetAmount(params.month, entry.category_id, toMinorUnits(entry.amount));
+            }
+          })
+        );
+        const backupFile = await writeMutationBackup({ operation: "actual_set_budget_amounts", request: params });
+        return makeToolResponse({ backup_file: backupFile, month: params.month, updated: params.entries.length });
       } catch (error) {
         return errorResponse(formatActualError(error));
       }
