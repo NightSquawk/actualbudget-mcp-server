@@ -19,7 +19,11 @@ export function registerCategoryTools(server: McpServer, engine: ActualEngine, e
     },
     async (params: { include_hidden: boolean }) => {
       try {
-        const groups = await engine.read((api) => api.getCategoryGroups({ hidden: params.include_hidden }));
+        // The engine's `hidden` option is a filter value, not an include flag:
+        // {hidden: true} returns ONLY hidden groups. Omit it to get everything.
+        const groups = await engine.read((api) =>
+          params.include_hidden ? api.getCategoryGroups() : api.getCategoryGroups({ hidden: false })
+        );
         return makeToolResponse({ category_groups: groups });
       } catch (error) {
         return errorResponse(formatActualError(error));
@@ -93,6 +97,70 @@ export function registerCategoryTools(server: McpServer, engine: ActualEngine, e
           after: { id }
         });
         return makeToolResponse({ backup_file: backupFile, id, ...request });
+      } catch (error) {
+        return errorResponse(formatActualError(error));
+      }
+    }
+  );
+
+  server.registerTool(
+    "actual_update_category_group",
+    {
+      title: "Update Actual Category Group",
+      description: "Update a category group's name, is_income, or hidden flag. Sensitive edit: call only after explicit human authorization.",
+      inputSchema: {
+        id: z.string().describe("Category group ID"),
+        name: z.string().optional(),
+        is_income: z.boolean().optional(),
+        hidden: z.boolean().optional()
+      },
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+    },
+    async (params: { id: string; name?: string; is_income?: boolean; hidden?: boolean }) => {
+      try {
+        const fields = {
+          ...(params.name !== undefined ? { name: unescapeName(params.name) } : {}),
+          ...(params.is_income !== undefined ? { is_income: params.is_income } : {}),
+          ...(params.hidden !== undefined ? { hidden: params.hidden } : {})
+        };
+        if (Object.keys(fields).length === 0) {
+          return errorResponse("Provide at least one field to update.");
+        }
+        await engine.write((api) => api.updateCategoryGroup(params.id, fields));
+        const backupFile = await writeMutationBackup({
+          operation: "actual_update_category_group",
+          request: { id: params.id, fields }
+        });
+        return makeToolResponse({ backup_file: backupFile, id: params.id, updated: fields });
+      } catch (error) {
+        return errorResponse(formatActualError(error));
+      }
+    }
+  );
+
+  server.registerTool(
+    "actual_delete_category_group",
+    {
+      title: "Delete Actual Category Group",
+      description: "Delete a category group and its categories, optionally moving their transactions to another category. Destructive: call only after explicit human authorization.",
+      inputSchema: {
+        id: z.string().describe("Category group ID to delete"),
+        transfer_category_id: z.string().optional().describe("Category to reassign existing transactions to")
+      },
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false }
+    },
+    async (params: { id: string; transfer_category_id?: string }) => {
+      try {
+        const before = await engine.read(async (api) =>
+          (await api.getCategoryGroups()).find((g) => g.id === params.id) ?? null
+        );
+        await engine.write((api) => api.deleteCategoryGroup(params.id, params.transfer_category_id));
+        const backupFile = await writeMutationBackup({
+          operation: "actual_delete_category_group",
+          before,
+          request: params
+        });
+        return makeToolResponse({ backup_file: backupFile, deleted: params.id });
       } catch (error) {
         return errorResponse(formatActualError(error));
       }
