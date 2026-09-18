@@ -4,10 +4,17 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { SERVER_NAME, SERVER_VERSION } from "./constants.js";
 import { loadConfig } from "./services/config.js";
 import { ActualEngine } from "./services/engine.js";
+import { redactSecrets } from "./services/errors.js";
 import { registerTools } from "./tools/index.js";
+import type { ActualConfig } from "./types.js";
+
+// Populated as soon as loadConfig() succeeds so the top-level catch below can
+// redact secrets from any error, regardless of where in main() it originated.
+let loadedConfig: ActualConfig | undefined;
 
 async function main(): Promise<void> {
   const config = loadConfig();
+  loadedConfig = config;
   const engine = new ActualEngine(config);
   const server = new McpServer({
     name: SERVER_NAME,
@@ -26,7 +33,8 @@ async function main(): Promise<void> {
     try {
       await engine.stop();
     } catch (error) {
-      console.error(`${SERVER_NAME}: shutdown error: ${error instanceof Error ? error.message : String(error)}`);
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`${SERVER_NAME}: shutdown error: ${redactSecrets(message, [config.password, config.budgetEncryptionPassword])}`);
     }
     process.exit(code);
   };
@@ -49,6 +57,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : String(error));
+  const message = error instanceof Error ? error.message : String(error);
+  const secrets = loadedConfig ? [loadedConfig.password, loadedConfig.budgetEncryptionPassword] : [];
+  console.error(redactSecrets(message, secrets));
   process.exit(1);
 });
