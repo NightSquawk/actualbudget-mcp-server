@@ -38,7 +38,7 @@
   "dependencies": {
     "@actual-app/api": "^26.7.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "dotenv": "^16.4.7",
+    "dotenv": "^18.0.9",
     "zod": "^3.25.0"
   },
   "devDependencies": {
