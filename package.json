@@ -39,7 +39,7 @@
     "@actual-app/api": "^26.7.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "dotenv": "^16.4.7",
-    "zod": "^3.25.0"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
